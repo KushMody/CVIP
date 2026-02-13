@@ -1,0 +1,221 @@
+import React, { useState, useEffect } from 'react';
+
+export default function AnimatedCharacters({ 
+  emailFocus, 
+  passwordFocus, 
+  isTyping, 
+  emailValue = '',
+  passwordValue = '',
+  hasError = false 
+}) {
+  const [mousePos, setMousePos] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+  const [rotation, setRotation] = useState(0);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRotation(prev => (prev + 2) % 360);
+    }, 30);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getEyeDirection = (eyeX, eyeY) => {
+    const angle = Math.atan2(mousePos.y - eyeY, mousePos.x - eyeX);
+    const distance = 4;
+    return {
+      x: Math.cos(angle) * distance,
+      y: Math.sin(angle) * distance,
+    };
+  };
+
+  const getBounceY = () => Math.sin((rotation * Math.PI) / 50) * 10;
+
+  // Purple box eyes
+  const purpleLeft = getEyeDirection(145 - 12, 80 - 6);
+  const purpleRight = getEyeDirection(145 + 8, 80 - 6);
+
+  // Black rect eyes
+  const blackLeft = getEyeDirection(221 - 12, 110 - 6);
+  const blackRight = getEyeDirection(221 + 12, 110 - 6);
+
+  // Orange semicircle eyes
+  const orangeLeft = getEyeDirection(150 - 30, 200 - 18);
+  const orangeRight = getEyeDirection(150 - 8, 200 - 18);
+
+  // Yellow bird eye
+  const yellowEye = getEyeDirection(336, 132);
+
+  return (
+    <div style={styles.container}>
+      <svg viewBox="0 0 480 320" style={styles.svg} width="100%" height="auto">
+        <defs>
+          <style>{`
+            @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+            .char-purple { animation: bounce 2s ease-in-out infinite; }
+            .char-black { animation: bounce 2.2s ease-in-out infinite 0.1s; }
+            .char-orange { animation: bounce 2.4s ease-in-out infinite 0.2s; }
+            .char-yellow { animation: bounce 2s ease-in-out infinite 0.3s; }
+          `}</style>
+        </defs>
+
+        {/* Baseline */}
+        <rect x="0" y="0" width="480" height="320" fill="transparent" />
+
+        {/* Purple tall rectangle (back-left) */}
+        <g className="char-purple" style={{
+          transform: `translateY(${emailFocus ? -15 : 0}px) scale(${emailValue.length > 0 ? 1.05 : 1})`,
+          transition: 'all 0.3s ease-out',
+          transformOrigin: '145px 124px',
+        }}>
+          <rect x="100" y="24" width="90" height="200" rx="6" fill="#6f23ff" />
+          
+          {/* Purple face */}
+          <g transform="translate(145,80)">
+            <circle cx="-12" cy="-6" r="7" fill="#ffffff" />
+            <circle cx={-12 + purpleLeft.x} cy={-6 + purpleLeft.y} r="2.3" fill="#1a1a1a" style={{ transition: 'all 0.1s ease' }} />
+            
+            <circle cx="8" cy="-6" r="7" fill="#ffffff" />
+            <circle cx={8 + purpleRight.x} cy={-6 + purpleRight.y} r="2.3" fill="#1a1a1a" style={{ transition: 'all 0.1s ease' }} />
+            
+            {/* Mouth changes with email input */}
+            {hasError ? (
+              <circle cx="-2" cy="18" r="3.2" fill="#1a1a1a" opacity="0.4" />
+            ) : emailValue.length > 0 ? (
+              <>
+                <path d="M -8 15 Q -2 22 4 15" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+              </>
+            ) : (
+              <circle cx="-2" cy="18" r="3.2" fill="#1a1a1a" />
+            )}
+          </g>
+        </g>
+
+        {/* Black narrow rectangle (center) */}
+        <g className="char-black" style={{
+          transform: `translateY(${passwordFocus ? -12 : 0}px) rotate(${passwordValue.length > 0 && !hasError ? 3 : hasError ? -5 : 0}deg) scale(${passwordValue.length > 0 ? 1.06 : 1})`,
+          transition: 'all 0.3s ease-out',
+          transformOrigin: '221px 164px',
+        }}>
+          <rect x="192" y="64" width="58" height="200" rx="6" fill="#0b0b0b" />
+          
+          {/* Black rect face */}
+          <g transform="translate(221,110)">
+            <circle cx="-12" cy="-6" r="6.5" fill="#ffffff" />
+            <circle cx={-12 + blackLeft.x} cy={-6 + blackLeft.y} r="2.8" fill="#0b0b0b" style={{ transition: 'all 0.1s ease' }} />
+            
+            <circle cx="12" cy="-6" r="6.5" fill="#ffffff" />
+            <circle cx={12 + blackRight.x} cy={-6 + blackRight.y} r="2.8" fill="#0b0b0b" style={{ transition: 'all 0.1s ease' }} />
+            
+            {/* Mouth changes with password input */}
+            {hasError ? (
+              <>
+                <line x1="-6" y1="10" x2="-2" y2="16" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
+                <line x1="-2" y1="10" x2="-6" y2="16" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
+              </>
+            ) : passwordValue.length > 0 ? (
+              <path d="M -6 14 Q 0 18 6 14" stroke="#fff" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+            ) : null}
+          </g>
+        </g>
+
+        {/* Orange semicircle (front-left) */}
+        <g className="char-orange" style={{
+          transform: `translateY(${emailValue.length > 0 && passwordValue.length > 0 && !hasError ? -15 : 0}px) scale(${emailValue.length > 0 && passwordValue.length > 0 && !hasError ? 1.08 : hasError ? 0.96 : 1})`,
+          transition: 'all 0.3s ease-out',
+          transformOrigin: '150px 230px',
+        }}>
+          <path d="M60 200 A90 90 0 0 1 240 200 L240 260 L60 260 Z" fill="#ff7a2f" />
+          
+          {/* Orange face */}
+          <g transform="translate(150,200)">
+            {/* Eyes */}
+            <circle cx="-30" cy="-18" r="6" fill="#0b0b0b" />
+            <circle cx={-30 + orangeLeft.x} cy={-18 + orangeLeft.y} r="2" fill="#fff" style={{ transition: 'all 0.1s ease' }} />
+            
+            <circle cx="-8" cy="-18" r="6" fill="#0b0b0b" />
+            <circle cx={-8 + orangeRight.x} cy={-18 + orangeRight.y} r="2" fill="#fff" style={{ transition: 'all 0.1s ease' }} />
+            
+            {/* Mouth changes with form state */}
+            {hasError ? (
+              <path d="M-26 -2 C-22 5 -12 8 -6 -2" fill="#0b0b0b" opacity="0.4" transform="scale(1,0.3) translate(0,12)" />
+            ) : emailValue.length > 0 && passwordValue.length > 0 ? (
+              <path d="M-26 -2 C-22 12 -12 16 -6 -2" fill="#0b0b0b" transform="scale(1,0.6) translate(0,12)" />
+            ) : (
+              <path d="M-26 -2 C-22 8 -12 12 -6 -2" fill="#0b0b0b" transform="scale(1,0.4) translate(0,12)" />
+            )}
+          </g>
+        </g>
+
+        {/* Yellow rounded figure (right) */}
+        <g className="char-yellow" style={{
+          transform: `translateY(${isTyping && !hasError ? -12 : 0}px) rotate(${isTyping && !hasError ? 8 : hasError ? -8 : 0}deg) scale(${isTyping && !hasError ? 1.1 : 1})`,
+          transition: 'all 0.3s ease-out',
+          transformOrigin: '354px 175px',
+        }}>
+          {/* Body */}
+          <rect x="294" y="94" width="120" height="162" rx="48" fill="#f4d233" />
+          
+          {/* Beak */}
+          <rect x="368" y="150" width="46" height="6" rx="3" fill="#0b0b0b" />
+          
+          {/* Eye with tracking */}
+          <circle cx="336" cy="132" r="4.5" fill="#0b0b0b" />
+          <circle cx={336 + yellowEye.x * 0.6} cy={132 + yellowEye.y * 0.6} r="1.8" fill="#fff" style={{ transition: 'all 0.1s ease' }} />
+          
+          {/* Animated details when typing */}
+          {isTyping && !hasError && (
+            <>
+              {/* Crest bounce animation */}
+              <g style={{ animation: 'bounce 0.5s ease-in-out infinite' }}>
+                <polygon points="336,94 332,80 340,88" fill="#f59e0b" />
+              </g>
+              {/* Wing flap */}
+              <g style={{
+                transformOrigin: '310px 140px',
+                transform: `rotate(${Math.sin(rotation * Math.PI / 180) * 30}deg)`,
+              }}>
+                <ellipse cx="310" cy="140" rx="12" ry="18" fill="#f59e0b" opacity="0.7" />
+              </g>
+            </>
+          )}
+        </g>
+
+        {/* Shadow */}
+        <ellipse cx="240" cy="310" rx="160" ry="12" fill="#000" opacity="0.08" />
+      </svg>
+
+      <style>{`
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+const styles = {
+  container: {
+    position: 'relative',
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: '600px',
+    background: 'linear-gradient(135deg, #efeff2 0%, #e5e7eb 100%)',
+    padding: '40px 20px',
+  },
+  svg: {
+    maxWidth: '500px',
+    width: '100%',
+    filter: 'drop-shadow(0 8px 24px rgba(0, 0, 0, 0.1))',
+  },
+};
